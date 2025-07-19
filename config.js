@@ -1,0 +1,2 @@
+// config.js
+export const RECEIVER_WALLET = "0x5E32B8f17ee92101FbC57dae729318015f89F16d";

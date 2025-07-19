@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Dojøn",
+    "slug": "dojon-web3-ninja",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/avatar.png",
+    "splash": {
+      "image": "./assets/logo-animation.json",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0a0a"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.riko.dojon",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/avatar.png",
+        "backgroundColor": "#0a0a0a"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "INFURA_ID": "<61fd4076ff1a46e4bb3c902b0bb24927>"
+    },
+    "platforms": ["ios", "android", "web"]
+  }
+}
+
+
+
