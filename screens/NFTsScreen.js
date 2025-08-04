@@ -9,28 +9,46 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Linking,
+  Button,
+  Alert
 } from 'react-native';
 import { connectWallet } from '../utils/wallet';
 
 export default function NFTsScreen() {
-  const [nfts, setNfts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const MORALIS_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjU2ZDFlNWQ1LTFmMDQtNDI4NC04NjBhLWNlYWU5MTRhZjFjNiIsIm9yZ0lkIjoiNDU5NTg2IiwidXNlcklkIjoiNDcyODMwIiwidHlwZUlkIjoiNDExMWM0YzUtNmMwYy00ZWU5LTk4ZTItZjQzOGM2ZGQ5NGIxIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NTI2NTA2ODIsImV4cCI6NDkwODQxMDY4Mn0.1NaDgyz9_AF9qmr9DLUEYPYK79HKcgpaoax41__O3Tg';
+  const [address, setAddress] = useState(null);
+  const [nfts, setNfts]       = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const { address } = await connectWallet();
-        const res = await fetch(
-          `https://deep-index.moralis.io/api/v2/${address}/nft?chain=polygon&format=decimal`,
-          { headers: { 'X-API-Key': MORALIS_KEY } }
-        );
-        const { result } = await res.json();
-        const parsed = result.map(n => {
+  // Tu API Key de Moralis
+  const MORALIS_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJu...O3Tg';
+
+  // Función para conectar y traer NFTs
+  const loadNFTs = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // 1) Conectar la wallet
+      const result = await connectWallet();
+      if (!result) throw new Error('Conexión fallida');
+      setAddress(result.address);
+
+      // 2) Llamar a Moralis
+      const url = `https://deep-index.moralis.io/api/v2/${result.address}/nft?chain=polygon&format=decimal`;
+      const res = await fetch(url, {
+        headers: { 'X-API-Key': MORALIS_KEY }
+      });
+      const json = await res.json();
+      if (!json.result) throw new Error('Respuesta inválida');
+
+      // 3) Parsear metadata
+      const parsed = json.result
+        .map(n => {
           let meta = {};
           try {
-            meta = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata;
+            meta = typeof n.metadata === 'string'
+              ? JSON.parse(n.metadata)
+              : n.metadata || {};
           } catch {}
           return {
             tokenId: n.token_id,
@@ -41,32 +59,57 @@ export default function NFTsScreen() {
               : meta.image,
             tokenAddress: n.token_address,
           };
-        }).filter(x => x.image);
-        setNfts(parsed);
-      } catch (e) {
-        setError(e.message);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+        })
+        .filter(item => item.image); // solo los que tienen imagen
 
+      setNfts(parsed);
+    } catch (e) {
+      console.error(e);
+      setError(e.message);
+      Alert.alert('Error', e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Efecto: no auto-load aquí, dejamos control al usuario
+  useEffect(() => {}, []);
+
+  // Si no conectaste aún, mostrar botón
+  if (!address) {
+    return (
+      <View style={styles.center}>
+        {loading
+          ? <ActivityIndicator size="large" color="#b59d35" />
+          : <Button title="Conectar Wallet y cargar NFTs" onPress={loadNFTs} />
+        }
+      </View>
+    );
+  }
+
+  // Si está cargando después de conectar
   if (loading) {
-    return <ActivityIndicator style={styles.center} size="large" color="#fff" />;
-  }
-  if (error) {
-    return <Text style={styles.error}>❌ {error}</Text>;
+    return <ActivityIndicator style={styles.center} size="large" color="#b59d35" />;
   }
 
+  // Pantalla de NFTs
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Galería NFT</Text>
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>🎴 NFTs de {address}</Text>
+      {error && <Text style={styles.error}>Error: {error}</Text>}
+
+      {nfts.length === 0 && (
+        <Text style={styles.empty}>No se encontraron NFTs.</Text>
+      )}
+
       {nfts.map((nft, i) => (
         <TouchableOpacity
           key={i}
           style={styles.card}
           onPress={() =>
-            Linking.openURL(`https://polygonscan.com/token/${nft.tokenAddress}?a=${nft.tokenId}`)
+            Linking.openURL(
+              `https://polygonscan.com/token/${nft.tokenAddress}?a=${nft.tokenId}`
+            )
           }
         >
           <Image source={{ uri: nft.image }} style={styles.image} />
@@ -81,20 +124,54 @@ export default function NFTsScreen() {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center' },
-  container: { padding: 10, backgroundColor: '#111' },
-  title: { color: '#fff', fontSize: 22, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
-  card: {
-    backgroundColor: '#222',
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 16,
-    borderColor: '#b59d35',
-    borderWidth: 1,
+  center: {
+    flex:1,
+    justifyContent:'center',
+    alignItems:'center',
+    backgroundColor:'#111'
   },
-  image: { width: '100%', height: 200, borderRadius: 8, marginBottom: 8 },
-  name: { color: '#fff1a1', fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
-  description: { color: '#ccc', fontSize: 14 },
-  error: { color: '#f00', padding: 20, textAlign: 'center' },
+  container: {
+    flex:1,
+    backgroundColor:'#111',
+    padding:10
+  },
+  title: {
+    color:'#fff',
+    fontSize:20,
+    marginBottom:12,
+    textAlign:'center'
+  },
+  error: {
+    color:'#f00',
+    textAlign:'center',
+    marginBottom:12
+  },
+  empty: {
+    color:'#ccc',
+    textAlign:'center',
+    marginTop:20
+  },
+  card: {
+    backgroundColor:'#222',
+    borderRadius:8,
+    padding:10,
+    marginBottom:12,
+    borderColor:'#b59d35',
+    borderWidth:1
+  },
+  image: {
+    width:'100%',
+    height:200,
+    borderRadius:6,
+    marginBottom:8
+  },
+  name: {
+    color:'#fffa1a',
+    fontSize:16,
+    fontWeight:'bold'
+  },
+  description: {
+    color:'#ccc',
+    marginTop:4
+  }
 });
-

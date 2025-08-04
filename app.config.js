@@ -1,12 +1,16 @@
-export default {
+import 'dotenv/config';
+
+export default ({ config }) => ({
+  ...config,
   expo: {
-    name: "Dojn",
+    ...config.expo,
+    name: "dojon-web3-ninja",
     slug: "dojon-web3-ninja",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/avatar.png",
     splash: {
-      image: "./assets/logo-animation.json",
+      image: "./assets/splash.png", // <-- aquí está la corrección
       resizeMode: "contain",
       backgroundColor: "#0a0a0a"
     },
@@ -15,8 +19,17 @@ export default {
       package: "com.riko.dojon",
       versionCode: 1
     },
+    ios: {
+      bundleIdentifier: "com.riko.dojon"
+    },
     extra: {
-      INFURA_ID: process.env.INFURA_ID || "<TU_INFURA_PROJECT_ID>"
+      // Tu Infura ID
+      INFURA_ID: process.env.INFURA_ID || "61fd4076ff1a46e4bb3c9",
+      // Configuración de EAS
+      eas: {
+        projectId: "59d07a5f-c567-4ed2-a342-4d35cdfdfe0c"
+      },
+      // Puedes seguir añadiendo aquí más variables extra si las necesitas
     }
   }
-};
+});
