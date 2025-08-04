@@ -20,6 +20,7 @@
       "supportsTablet": true
     },
     "android": {
+      "targetSdkVersion": 34,
       "package": "com.riko.dojon",
       "versionCode": 1,
       "adaptiveIcon": {
